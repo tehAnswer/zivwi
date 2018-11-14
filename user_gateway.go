@@ -9,9 +9,9 @@ import (
 )
 
 type UserGateway interface {
-	FindBy(id string) (*User, error)
+	FindBy(email string, password string) (*User, error)
 	// Methods used in unit tests.
-	Create(firstName string, lastName string, password string) (*User, error)
+	Create(user User) (*User, error)
 	DeleteAll() error
 }
 
@@ -20,6 +20,7 @@ type User struct {
 	Id        string
 	FirstName string
 	LastName  string
+	Email     string
 	Password  string
 }
 
@@ -33,9 +34,16 @@ func NewUserGateway() UserGateway {
 	}
 }
 
-func (gtw *UserGatewayImpl) FindBy(id string) (*User, error) {
-	rows, dbError := gtw.Database.Connection.Query(`SELECT
-     id, first_name, last_name FROM users where id = $1`, id)
+func (gtw *UserGatewayImpl) FindBy(email string, password string) (*User, error) {
+
+	rows, dbError := gtw.Database.Connection.Query(`
+    SELECT
+       id, first_name, last_name, email, password
+     FROM
+       users
+     WHERE
+       email = $1`, email)
+
 	if dbError != nil {
 		return nil, dbError
 	}
@@ -43,28 +51,42 @@ func (gtw *UserGatewayImpl) FindBy(id string) (*User, error) {
 	var user User
 	var scanErr error
 	for rows.Next() {
-		scanErr = rows.Scan(&user.Id, &user.FirstName, &user.LastName)
+		scanErr = rows.Scan(
+			&user.Id,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+		)
 	}
+
 	// If there is no match, return nil and custom error.
 	if user == (User{}) && scanErr == nil {
 		return nil, fmt.Errorf("User not found")
 	}
 
+	pwdErr := bcrypt.CompareHashAndPassword(
+		[]byte(user.Password), []byte(password))
+	if pwdErr != nil {
+		return nil, fmt.Errorf("Incorrect email/password combination.")
+	}
+
 	return &user, scanErr
 }
 
-func (gtw *UserGatewayImpl) Create(firstName string, lastName string, password string) (*User, error) {
+func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
 	query := `
     INSERT INTO users
-      (id, first_name, last_name, password, created_at)
+      (id, first_name, last_name, email, password, created_at)
     VALUES
-      ($1, $2, $3, $4, $5)`
+      ($1, $2, $3, $4, $5, $6)`
 	uuid := uuid.NewV4().String()
-	saltedPassword := gtw.hashAndSalt(password)
+	saltedPassword := gtw.hashAndSalt(user.Password)
 	_, dbError := gtw.Database.Connection.Query(query,
 		uuid,
-		firstName,
-		lastName,
+		user.FirstName,
+		user.LastName,
+		user.Email,
 		saltedPassword,
 		time.Now(),
 	)
@@ -73,7 +95,8 @@ func (gtw *UserGatewayImpl) Create(firstName string, lastName string, password s
 		return nil, dbError
 	}
 
-	return &User{Id: uuid, FirstName: firstName, LastName: lastName}, nil
+	user.Id = uuid
+	return &user, nil
 }
 
 func (gtw *UserGatewayImpl) hashAndSalt(password string) string {
