@@ -7,11 +7,11 @@ type AuthorizeService interface {
 	login(email string, password string) (string, error)
 }
 
-type AuthorizationService struct {
+type AuthorizeServiceImpl struct {
 	Users      *UserGateway
 	SigningKey []byte
 }
 
-func NewAuthorizeService() *AuthorizeService {
-
+func NewAuthorizeService() AuthorizeService {
+	return nil
 }
