@@ -11,7 +11,8 @@ import (
 )
 
 func TestCorrectLogin(t *testing.T) {
-	service := main.NewAuthorizeService()
+	service := main.NewAuthorizeService(
+		main.NewUserGateway(main.NewDatabase()))
 	authorizationService, _ := service.(*main.AuthorizeServiceImpl)
 	user, _ := authorizationService.Users.Create(main.User{
 		FirstName: "Benito",
@@ -44,7 +45,8 @@ func TestCorrectLogin(t *testing.T) {
 }
 
 func TestIncorrectLogin(t *testing.T) {
-	service := main.NewAuthorizeService()
+	service := main.NewAuthorizeService(
+		main.NewUserGateway(main.NewDatabase()))
 	authorizationService, _ := service.(*main.AuthorizeServiceImpl)
 	authorizationService.Users.Create(main.User{
 		FirstName: "Benito",

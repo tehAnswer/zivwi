@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -10,6 +11,7 @@ import (
 
 var (
 	address = flag.String("port", "127.0.0.1:3000", "TCP address to listen to.")
+	appCtx  = NewAppCtx()
 )
 
 func main() {
@@ -20,11 +22,16 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.JWT([]byte(os.Getenv("JWT_SECRET"))))
 
 	// Routes
 	e.POST("/authorize", Authorize)
-	e.POST("/cmd/pay", PayCmd)
-	e.GET("/q/balance", BalanceQuery)
+
+	commands := e.Group("/cmd")
+	queries := e.Group("/q")
+
+	commands.POST("/pay", PayCmd)
+	queries.GET("/balance", BalanceQuery)
 
 	// Start server
 	e.Logger.Fatal(e.Start(*address))
@@ -43,7 +50,7 @@ func Authorize(c echo.Context) error {
 		}{"Incorrect login params, please send email and password"})
 	}
 
-	token, loginErr := NewAuthorizeService().Login(credentials.Email, credentials.Password)
+	token, loginErr := appCtx.AuthorizeService.Login(credentials.Email, credentials.Password)
 	if loginErr != nil {
 		return c.String(401, loginErr.Error())
 	}

@@ -9,7 +9,7 @@ import (
 
 func TestFindBy(t *testing.T) {
 	// Setting data and services.
-	gateway := main.NewUserGateway()
+	gateway := main.NewUserGateway(main.NewDatabase())
 	_, err1 := gateway.Create(main.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",
@@ -38,7 +38,7 @@ func TestFindBy(t *testing.T) {
 		assert.Equal(t, "Paco", returned.LastName)
 	}
 
-	returned, err = gateway.FindBy("adolfo@reich.de", "m3hrLi3b3")
+	returned, err = gateway.FindBy("adolfo@dhl.de", "m3hrLi3b3")
 	if assert.Error(t, err) {
 		assert.Nil(t, returned)
 	}

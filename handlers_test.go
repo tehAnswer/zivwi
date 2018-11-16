@@ -17,7 +17,7 @@ var (
 )
 
 func TestLoginThroughAPI(t *testing.T) {
-	gateway := main.NewUserGateway()
+	gateway := main.NewUserGateway(main.NewDatabase())
 	_, err := gateway.Create(main.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",
@@ -44,7 +44,7 @@ func TestLoginThroughAPI(t *testing.T) {
 }
 
 func TestIncorrectLoginThroughAPI(t *testing.T) {
-	gateway := main.NewUserGateway()
+	gateway := main.NewUserGateway(main.NewDatabase())
 	_, err := gateway.Create(main.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",

@@ -20,9 +20,9 @@ type AuthorizeServiceImpl struct {
 	SigningKey []byte
 }
 
-func NewAuthorizeService() AuthorizeService {
+func NewAuthorizeService(userGateway UserGateway) AuthorizeService {
 	return &AuthorizeServiceImpl{
-		Users:      NewUserGateway(),
+		Users:      userGateway,
 		SigningKey: []byte(os.Getenv("JWT_SECRET")),
 	}
 }

@@ -28,9 +28,9 @@ type UserGatewayImpl struct {
 	Database *Database
 }
 
-func NewUserGateway() UserGateway {
+func NewUserGateway(database *Database) UserGateway {
 	return &UserGatewayImpl{
-		Database: NewDatabase(),
+		Database: database,
 	}
 }
 
@@ -80,10 +80,10 @@ func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
       (id, first_name, last_name, email, password, created_at)
     VALUES
       ($1, $2, $3, $4, $5, $6)`
-	uuid := uuid.NewV4().String()
+	userId := uuid.NewV4().String()
 	saltedPassword := gtw.hashAndSalt(user.Password)
 	_, dbError := gtw.Database.Connection.Query(query,
-		uuid,
+		userId,
 		user.FirstName,
 		user.LastName,
 		user.Email,
@@ -95,7 +95,7 @@ func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
 		return nil, dbError
 	}
 
-	user.Id = uuid
+	user.Id = userId
 	return &user, nil
 }
 
