@@ -6,7 +6,7 @@ import (
 )
 
 type TransferService interface {
-	Pay(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error)
+	Perform(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error)
 }
 
 type TransferServiceImpl struct {
@@ -23,12 +23,17 @@ func NewTransferService(accounts AccountGateway, transfers TransferGateway, queu
 	}
 }
 
-func (service *TransferServiceImpl) Pay(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error) {
+func (service *TransferServiceImpl) Perform(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error) {
 	if fromAccountId == toAccountId {
 		return nil, fmt.Errorf("You can't send money to the same account you're sending from.")
 	}
+
+	if amount <= uint64(0) {
+		return nil, fmt.Errorf("You need to send at least one cent.")
+	}
+
 	if sourceAccount, err := service.Accounts.FindBy(fromAccountId); err == nil {
-		if sourceAccount.Balance > amount {
+		if sourceAccount.Balance >= amount {
 			transfer := Transfer{
 				FromAccountId: fromAccountId,
 				ToAccountId:   toAccountId,
