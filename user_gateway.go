@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -80,8 +80,8 @@ func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
       (id, first_name, last_name, email, password, created_at)
     VALUES
       ($1, $2, $3, $4, $5, $6)`
-	userId := uuid.NewV4().String()
 	saltedPassword := gtw.hashAndSalt(user.Password)
+	userId := uuid.NewV4().String()
 	_, dbError := gtw.Database.Connection.Query(query,
 		userId,
 		user.FirstName,

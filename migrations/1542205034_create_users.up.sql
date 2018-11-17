@@ -4,7 +4,7 @@ CREATE TABLE users (
   last_name VARCHAR(255),
   email VARCHAR(255),
   password VARCHAR(255),
-  created_at timestamp
+  created_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX "email_index" ON users(email);

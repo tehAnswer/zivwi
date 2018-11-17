@@ -22,6 +22,9 @@ func NewTransferService(accounts AccountGateway, queue Queue) TransferService {
 }
 
 func (service *TransferServiceImpl) Pay(fromAccountId string, toAccountId string, amount uint64) error {
+	if fromAccountId == toAccountId {
+		return fmt.Errorf("You can't send money to the same account you're sending from.")
+	}
 	if sourceAccount, err := service.Accounts.FindBy(fromAccountId); err == nil {
 		if sourceAccount.Balance > amount {
 			payload, _ := json.Marshal(struct {

@@ -7,7 +7,7 @@ import (
 	main "github.com/tehAnswer/zivwi"
 )
 
-func TestFindBy(t *testing.T) {
+func TestUserFindBy(t *testing.T) {
 	// Setting data and services.
 	gateway := main.NewUserGateway(main.NewDatabase())
 	_, err1 := gateway.Create(main.User{
