@@ -4,4 +4,4 @@ CREATE TABLE accounts (
   created_at TIMESTAMPTZ NOT NULL
 );
 
-ALTER TABLE users ADD COLUMN accounts text[];
+ALTER TABLE users ADD COLUMN account_ids text[];

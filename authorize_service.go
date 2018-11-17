@@ -42,6 +42,7 @@ func (service *AuthorizeServiceImpl) buildJwtFor(user *User) (string, error) {
 	claims["sub"] = user.Id
 	claims["name"] = fmt.Sprintf("%v %v", user.FirstName, user.LastName)
 	claims["role"] = "user"
+	claims["account_ids"] = user.AccountIds
 	claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
 
 	// Generate encoded token and send it as response.

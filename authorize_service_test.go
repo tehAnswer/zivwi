@@ -15,10 +15,11 @@ func TestCorrectLogin(t *testing.T) {
 		main.NewUserGateway(main.NewDatabase()))
 	authorizationService, _ := service.(*main.AuthorizeServiceImpl)
 	user, _ := authorizationService.Users.Create(main.User{
-		FirstName: "Benito",
-		LastName:  "Mussó",
-		Email:     "benito@rome.it",
-		Password:  "cia0p0rc0di0",
+		FirstName:  "Benito",
+		LastName:   "Mussó",
+		Email:      "benito@rome.it",
+		Password:   "cia0p0rc0di0",
+		AccountIds: []string{"b2cc7786-a4ce-45b0-9268-75aed2f14554"},
 	})
 
 	defer authorizationService.Users.DeleteAll()
@@ -39,6 +40,8 @@ func TestCorrectLogin(t *testing.T) {
 			assert.Equal(t, "Benito Mussó", claims["name"])
 			assert.Equal(t, "user", claims["role"])
 			assert.NotNil(t, claims["exp"])
+			ids, _ := claims["account_ids"].([]interface{})
+			assert.Equal(t, "b2cc7786-a4ce-45b0-9268-75aed2f14554", ids[0].(string))
 		}
 	}
 

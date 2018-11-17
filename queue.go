@@ -12,6 +12,7 @@ type Queue interface {
 
 func NewQueue() Queue {
 	config := nsq.NewConfig()
-	producer, _ := nsq.NewProducer(os.Getenv("NSQ_URL"), config)
+	url := os.Getenv("NSQ_URL")
+	producer, _ := nsq.NewProducer(url, config)
 	return producer
 }

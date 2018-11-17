@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,11 +18,12 @@ type UserGateway interface {
 
 // Represents any person using the application.
 type User struct {
-	Id        string
-	FirstName string
-	LastName  string
-	Email     string
-	Password  string
+	Id         string
+	FirstName  string
+	LastName   string
+	Email      string
+	Password   string
+	AccountIds []string
 }
 
 type UserGatewayImpl struct {
@@ -38,7 +40,7 @@ func (gtw *UserGatewayImpl) FindBy(email string, password string) (*User, error)
 
 	rows, dbError := gtw.Database.Connection.Query(`
     SELECT
-       id, first_name, last_name, email, password
+       id, first_name, last_name, email, password, account_ids
      FROM
        users
      WHERE
@@ -49,19 +51,22 @@ func (gtw *UserGatewayImpl) FindBy(email string, password string) (*User, error)
 	}
 
 	var user User
+	counter := 0
 	var scanErr error
 	for rows.Next() {
+		counter = counter + 1
 		scanErr = rows.Scan(
 			&user.Id,
 			&user.FirstName,
 			&user.LastName,
 			&user.Email,
 			&user.Password,
+			pq.Array(&user.AccountIds),
 		)
 	}
 
 	// If there is no match, return nil and custom error.
-	if user == (User{}) && scanErr == nil {
+	if counter == 0 && scanErr == nil {
 		return nil, fmt.Errorf("User not found")
 	}
 
@@ -77,9 +82,9 @@ func (gtw *UserGatewayImpl) FindBy(email string, password string) (*User, error)
 func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
 	query := `
     INSERT INTO users
-      (id, first_name, last_name, email, password, created_at)
+      (id, first_name, last_name, email, password, account_ids, created_at)
     VALUES
-      ($1, $2, $3, $4, $5, $6)`
+      ($1, $2, $3, $4, $5, $6, $7)`
 	saltedPassword := gtw.hashAndSalt(user.Password)
 	userId := uuid.NewV4().String()
 	_, dbError := gtw.Database.Connection.Query(query,
@@ -88,6 +93,7 @@ func (gtw *UserGatewayImpl) Create(user User) (*User, error) {
 		user.LastName,
 		user.Email,
 		saltedPassword,
+		pq.Array(user.AccountIds),
 		time.Now(),
 	)
 
