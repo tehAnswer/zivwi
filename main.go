@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"net/http"
+	"fmt"
 	"os"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -34,7 +34,7 @@ func main() {
 	queries.Use(middleware.JWT([]byte(os.Getenv("JWT_SECRET"))))
 
 	commands.POST("/transfer", TransferCmd)
-	queries.GET("/balance", BalanceQuery)
+	queries.GET("/accounts", AccountsQuery)
 
 	// Start server
 	e.Logger.Fatal(e.Start(*address))
@@ -64,9 +64,7 @@ func Authorize(c echo.Context) error {
 }
 
 func TransferCmd(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	accountIds := claims["account_ids"].([]interface{})
+	accounts := getAccounts(c)
 
 	params := new(struct {
 		FromAccountId string `json:"from_account_id"`
@@ -81,7 +79,7 @@ func TransferCmd(c echo.Context) error {
 		}{"Unprocessable transfer."})
 	}
 
-	if !contains(accountIds, params.FromAccountId) {
+	if !contains(accounts, params.FromAccountId) {
 		return c.JSON(401, struct {
 			Message string `json:"message"`
 		}{"Unauthorized access."})
@@ -102,15 +100,33 @@ func TransferCmd(c echo.Context) error {
 	return c.JSON(201, transfer)
 }
 
-func BalanceQuery(c echo.Context) error {
-	return c.String(http.StatusNotImplemented, "Not implemented")
+func AccountsQuery(c echo.Context) error {
+	accountIds := getAccounts(c)
+	accounts, _ := appCtx.Accounts.Where(accountIds)
+	return c.JSON(200, struct {
+		Accounts []*Account `json:"accounts"`
+	}{accounts})
 }
 
-func contains(s []interface{}, e string) bool {
+func contains(s []string, e string) bool {
 	for _, a := range s {
 		if a == e {
 			return true
 		}
 	}
 	return false
+}
+
+func getAccounts(c echo.Context) []string {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	// Sadly, it can be only cast down to []interface{}
+	accountIds := claims["account_ids"].([]interface{})
+	var returnArray = make([]string, len(accountIds))
+
+	for index, element := range accountIds {
+		returnArray[index] = fmt.Sprintf("%v", element)
+	}
+
+	return returnArray
 }
