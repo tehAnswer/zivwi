@@ -6,36 +6,48 @@ import (
 )
 
 type TransferService interface {
-	Pay(fromAccountId string, toAccountId string, amount uint64) error
+	Pay(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error)
 }
 
 type TransferServiceImpl struct {
-	Accounts AccountGateway
-	Queue    Queue
+	Accounts  AccountGateway
+	Transfers TransferGateway
+	Queue     Queue
 }
 
-func NewTransferService(accounts AccountGateway, queue Queue) TransferService {
+func NewTransferService(accounts AccountGateway, transfers TransferGateway, queue Queue) TransferService {
 	return &TransferServiceImpl{
-		Accounts: accounts,
-		Queue:    queue,
+		Accounts:  accounts,
+		Transfers: transfers,
+		Queue:     queue,
 	}
 }
 
-func (service *TransferServiceImpl) Pay(fromAccountId string, toAccountId string, amount uint64) error {
+func (service *TransferServiceImpl) Pay(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error) {
 	if fromAccountId == toAccountId {
-		return fmt.Errorf("You can't send money to the same account you're sending from.")
+		return nil, fmt.Errorf("You can't send money to the same account you're sending from.")
 	}
 	if sourceAccount, err := service.Accounts.FindBy(fromAccountId); err == nil {
 		if sourceAccount.Balance > amount {
-			payload, _ := json.Marshal(struct {
-				fromAccountId string `json:from_account_id`
-				toAccountId   string `json:to_account_id`
-				amount        uint64 `json:amount`
-			}{fromAccountId, toAccountId, amount})
+			transfer := Transfer{
+				FromAccountId: fromAccountId,
+				ToAccountId:   toAccountId,
+				Amount:        amount,
+				Message:       msg,
+				Status:        "processing",
+			}
+			transferFromDb, createErr := service.Transfers.Create(transfer)
 
-			return service.Queue.Publish("transfers", payload)
+			if createErr == nil {
+				payload, _ := json.Marshal(&transferFromDb)
+				queueErr := service.Queue.Publish("transfers", payload)
+				if queueErr == nil {
+					return transferFromDb, nil
+				}
+				return nil, queueErr
+			}
 		}
-		return fmt.Errorf("Not enough balance.")
+		return nil, fmt.Errorf("Not enough balance.")
 	}
-	return fmt.Errorf("Account not found.")
+	return nil, fmt.Errorf("Source account not found.")
 }

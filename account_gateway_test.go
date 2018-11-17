@@ -19,6 +19,7 @@ func TestAccountFindBy(t *testing.T) {
 		assert.Equal(t, uint64(10000), returned.Balance)
 	}
 }
+
 func TestAccountWhere(t *testing.T) {
 	// Setting data and services.
 	gateway := main.NewAccountGateway(main.NewDatabase())

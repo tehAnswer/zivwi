@@ -21,7 +21,7 @@ func NewAppCtx() AppCtx {
 
 	// Logic
 	authService := NewAuthorizeService(users)
-	transferService := NewTransferService(accounts, queue)
+	transferService := NewTransferService(accounts, transfers, queue)
 
 	return AppCtx{
 		Accounts:         accounts,
