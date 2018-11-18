@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 
 type TransferService interface {
 	Perform(fromAccountId string, toAccountId string, amount uint64, msg string) (*Transfer, error)
+	Resolve(transfer Transfer) error
 }
 
 type TransferServiceImpl struct {
@@ -55,4 +56,8 @@ func (service *TransferServiceImpl) Perform(fromAccountId string, toAccountId st
 		return nil, fmt.Errorf("Not enough balance.")
 	}
 	return nil, fmt.Errorf("Source account not found.")
+}
+
+func (service *TransferServiceImpl) Resolve(transfer Transfer) error {
+	return service.Transfers.UpdateBalancesFrom(transfer)
 }

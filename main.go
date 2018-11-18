@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"flag"
@@ -15,7 +15,7 @@ var (
 	appCtx  = NewAppCtx()
 )
 
-func main() {
+func Run() {
 	flag.Parse()
 	// Echo instance
 	e := echo.New()

@@ -1,17 +1,17 @@
-package main_test
+package app_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	main "github.com/tehAnswer/zivwi"
+	app "github.com/tehAnswer/zivwi"
 )
 
 func TestTransferFindBy(t *testing.T) {
 	// Setting data and services.
-	database := main.NewDatabase()
-	gateway := main.NewTransferGateway(database)
-	transfer, err := gateway.Create(main.Transfer{
+	database := app.NewDatabase()
+	gateway := app.NewTransferGateway(database)
+	transfer, err := gateway.Create(app.Transfer{
 		FromAccountId: "3c489418-8d96-45c1-9773-321d21062964",
 		ToAccountId:   "1e011113-d42c-4318-b9de-ee9cc064d4c0",
 		Amount:        10000,
@@ -34,9 +34,9 @@ func TestTransferFindBy(t *testing.T) {
 
 func TestTransferUpdate(t *testing.T) {
 	// Setting data and services.
-	database := main.NewDatabase()
-	gateway := main.NewTransferGateway(database)
-	transfer, err := gateway.Create(main.Transfer{
+	database := app.NewDatabase()
+	gateway := app.NewTransferGateway(database)
+	transfer, err := gateway.Create(app.Transfer{
 		FromAccountId: "3c489418-8d96-45c1-9773-321d21062964",
 		ToAccountId:   "1e011113-d42c-4318-b9de-ee9cc064d4c0",
 		Amount:        10000,

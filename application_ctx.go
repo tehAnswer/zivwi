@@ -1,4 +1,4 @@
-package main
+package app
 
 type AppCtx struct {
 	Accounts         AccountGateway
@@ -7,6 +7,7 @@ type AppCtx struct {
 	TransferService  TransferService
 	Users            UserGateway
 	Queue            Queue
+	Database         *Database
 }
 
 func NewAppCtx() AppCtx {

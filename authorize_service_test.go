@@ -1,4 +1,4 @@
-package main_test
+package app_test
 
 import (
 	"fmt"
@@ -7,14 +7,14 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
-	main "github.com/tehAnswer/zivwi"
+	app "github.com/tehAnswer/zivwi"
 )
 
 func TestCorrectLogin(t *testing.T) {
-	service := main.NewAuthorizeService(
-		main.NewUserGateway(main.NewDatabase()))
-	authorizationService, _ := service.(*main.AuthorizeServiceImpl)
-	user, _ := authorizationService.Users.Create(main.User{
+	service := app.NewAuthorizeService(
+		app.NewUserGateway(app.NewDatabase()))
+	authorizationService, _ := service.(*app.AuthorizeServiceImpl)
+	user, _ := authorizationService.Users.Create(app.User{
 		FirstName:  "Benito",
 		LastName:   "Mussó",
 		Email:      "benito@rome.it",
@@ -48,10 +48,10 @@ func TestCorrectLogin(t *testing.T) {
 }
 
 func TestIncorrectLogin(t *testing.T) {
-	service := main.NewAuthorizeService(
-		main.NewUserGateway(main.NewDatabase()))
-	authorizationService, _ := service.(*main.AuthorizeServiceImpl)
-	authorizationService.Users.Create(main.User{
+	service := app.NewAuthorizeService(
+		app.NewUserGateway(app.NewDatabase()))
+	authorizationService, _ := service.(*app.AuthorizeServiceImpl)
+	authorizationService.Users.Create(app.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",
 		Email:     "benito@rome.it",

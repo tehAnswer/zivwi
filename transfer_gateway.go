@@ -1,6 +1,7 @@
-package main
+package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 )
 
 type TransferGateway interface {
+	UpdateBalancesFrom(transfer Transfer) error
 	Create(transfer Transfer) (*Transfer, error)
 	FindBy(transferId string) (*Transfer, error)
 	Update(transfer Transfer) (*Transfer, error)
@@ -96,10 +98,19 @@ func (gtw *TransferGatewayImpl) FindBy(transferId string) (*Transfer, error) {
 
 	return &transfer, nil
 }
+
 func (gtw *TransferGatewayImpl) Update(transfer Transfer) (*Transfer, error) {
+	tx, txErr := gtw.Database.Connection.Begin()
+	if txErr != nil {
+		return nil, txErr
+	}
+	return gtw.update(tx, transfer)
+}
+
+func (gtw *TransferGatewayImpl) update(tx *sql.Tx, transfer Transfer) (*Transfer, error) {
 	updatedAt := time.Now()
 
-	rows, dbError := gtw.Database.Connection.Query(`
+	rows, dbError := tx.Query(`
       UPDATE transfers
       SET status = $2, error = $3, updated_at = $4
       WHERE id = $1
@@ -109,12 +120,14 @@ func (gtw *TransferGatewayImpl) Update(transfer Transfer) (*Transfer, error) {
 		return nil, dbError
 	}
 
-	rowsCount := 0
-	for rows.Next() {
-		rowsCount = rowsCount + 1
+	updatesCheckErr := EnsureOneUpdate(rows)
+	if updatesCheckErr != nil {
+		return nil, updatesCheckErr
 	}
-	if rowsCount == 0 {
-		return nil, fmt.Errorf("No transfer got updated")
+
+	commitErr := tx.Commit()
+	if commitErr != nil {
+		return nil, commitErr
 	}
 
 	return &transfer, nil
@@ -124,4 +137,74 @@ func (gtw *TransferGatewayImpl) DeleteAll() error {
 	query := "DELETE FROM transfers"
 	_, dbError := gtw.Database.Connection.Query(query)
 	return dbError
+}
+
+func (gtw *TransferGatewayImpl) UpdateBalancesFrom(transfer Transfer) error {
+
+	tx, txErr := gtw.Database.Connection.Begin()
+	if txErr != nil {
+		return txErr
+	}
+
+	fromAccountBalancingErr := UpdateBalanceOf(tx, transfer.FromAccountId, transfer.Id)
+	if fromAccountBalancingErr != nil {
+		return fromAccountBalancingErr
+	}
+	toAccountBalancingErr := UpdateBalanceOf(tx, transfer.ToAccountId, transfer.Id)
+	if toAccountBalancingErr != nil {
+		return toAccountBalancingErr
+	}
+	transfer.Status = "completed"
+
+	gtw.update(tx, transfer)
+	return nil
+}
+
+func UpdateBalanceOf(tx *sql.Tx, accountId string, transferId string) error {
+	query := `
+		UPDATE accounts
+		SET balance = subquery.balance
+		FROM (
+			SELECT
+				sum(
+					CASE
+					WHEN from_account_id = $1 THEN amount * -1
+					WHEN to_account_id = $1 THEN amount
+					END
+				) AS balance
+				FROM transfers
+				WHERE from_account_id = $1
+				OR to_account_id = $1
+				AND status = 'completed'
+				OR id = $2
+		) AS subquery
+		WHERE id = $1
+		RETURNING id`
+
+	rows, errorBalance := tx.Query(query, accountId, transferId)
+	if errorBalance != nil {
+		fmt.Println(errorBalance.Error())
+		return errorBalance
+	}
+
+	oneUpdateError := EnsureOneUpdate(rows)
+	if oneUpdateError != nil {
+		tx.Rollback()
+		return fmt.Errorf("Failed to rebalance %v. Reason: %v",
+			accountId,
+			oneUpdateError.Error())
+	}
+	return nil
+}
+
+func EnsureOneUpdate(rows *sql.Rows) error {
+	counter := 0
+	for rows.Next() {
+		counter = counter + 1
+	}
+
+	if counter != 1 {
+		return fmt.Errorf("None or more than one record were updated.")
+	}
+	return nil
 }

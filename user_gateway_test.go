@@ -1,16 +1,16 @@
-package main_test
+package app_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	main "github.com/tehAnswer/zivwi"
+	app "github.com/tehAnswer/zivwi"
 )
 
 func TestUserFindBy(t *testing.T) {
 	// Setting data and services.
-	gateway := main.NewUserGateway(main.NewDatabase())
-	_, err1 := gateway.Create(main.User{
+	gateway := app.NewUserGateway(app.NewDatabase())
+	_, err1 := gateway.Create(app.User{
 		FirstName:  "Benito",
 		LastName:   "Mussó",
 		Email:      "benito@rome.it",
@@ -18,7 +18,7 @@ func TestUserFindBy(t *testing.T) {
 		AccountIds: []string{"f44b7d9c-29c7-406b-99b2-159e036a28d6"},
 	})
 	assert.NoError(t, err1)
-	_, err2 := gateway.Create(main.User{
+	_, err2 := gateway.Create(app.User{
 		FirstName:  "Francisco",
 		LastName:   "Paco",
 		Email:      "paco@pp.es",

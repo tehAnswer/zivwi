@@ -1,4 +1,4 @@
-package main_test
+package app_test
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
-	main "github.com/tehAnswer/zivwi"
+	app "github.com/tehAnswer/zivwi"
 )
 
 var (
@@ -21,19 +21,19 @@ var (
 )
 
 func TestLoginThroughAPIAndTransfer(t *testing.T) {
-	database := main.NewDatabase()
-	accountGateway := main.NewAccountGateway(database)
-	transferGateway := main.NewTransferGateway(database)
-	userGateway := main.NewUserGateway(database)
+	database := app.NewDatabase()
+	accountGateway := app.NewAccountGateway(database)
+	transferGateway := app.NewTransferGateway(database)
+	userGateway := app.NewUserGateway(database)
 
-	account1, _ := accountGateway.Create(main.Account{
+	account1, _ := accountGateway.Create(app.Account{
 		Balance: 10000,
 	})
 
-	account2, _ := accountGateway.Create(main.Account{
+	account2, _ := accountGateway.Create(app.Account{
 		Balance: 10000000,
 	})
-	user, _ := userGateway.Create(main.User{
+	user, _ := userGateway.Create(app.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",
 		Email:     "benito@rome.it",
@@ -58,7 +58,7 @@ func TestLoginThroughAPIAndTransfer(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions for login
-	if assert.NoError(t, main.Authorize(c)) {
+	if assert.NoError(t, app.Authorize(c)) {
 		assert.Equal(t, 200, rec.Code)
 		assert.Contains(t, rec.Body.String(), "token")
 	}
@@ -97,7 +97,7 @@ func TestLoginThroughAPIAndTransfer(t *testing.T) {
 	c2.Set("user", parsedToken)
 
 	// Assertions for login
-	if assert.NoError(t, main.TransferCmd(c2)) {
+	if assert.NoError(t, app.TransferCmd(c2)) {
 		assert.Equal(t, 201, rec2.Code)
 		assert.Contains(t, rec2.Body.String(), "processing")
 		var body2 struct {
@@ -114,8 +114,8 @@ func TestLoginThroughAPIAndTransfer(t *testing.T) {
 }
 
 func TestIncorrectLoginThroughAPI(t *testing.T) {
-	gateway := main.NewUserGateway(main.NewDatabase())
-	_, err := gateway.Create(main.User{
+	gateway := app.NewUserGateway(app.NewDatabase())
+	_, err := gateway.Create(app.User{
 		FirstName: "Benito",
 		LastName:  "Mussó",
 		Email:     "benito@rome.it",
@@ -134,7 +134,7 @@ func TestIncorrectLoginThroughAPI(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, main.Authorize(c)) {
+	if assert.NoError(t, app.Authorize(c)) {
 		assert.Equal(t, 401, rec.Code)
 		assert.Contains(t, rec.Body.String(), "Incorrect email/password combination")
 	}
@@ -148,27 +148,27 @@ func TestIncorrectLoginParams(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, main.Authorize(c)) {
+	if assert.NoError(t, app.Authorize(c)) {
 		assert.Equal(t, 422, rec.Code)
 		assert.Contains(t, rec.Body.String(), "Incorrect login params")
 	}
 }
 
 func TestInvalidTransferDueToTenancy(t *testing.T) {
-	database := main.NewDatabase()
-	accountGateway := main.NewAccountGateway(database)
-	transferGateway := main.NewTransferGateway(database)
-	userGateway := main.NewUserGateway(database)
+	database := app.NewDatabase()
+	accountGateway := app.NewAccountGateway(database)
+	transferGateway := app.NewTransferGateway(database)
+	userGateway := app.NewUserGateway(database)
 
-	account1, _ := accountGateway.Create(main.Account{
+	account1, _ := accountGateway.Create(app.Account{
 		Balance: 10000,
 	})
 
-	account2, _ := accountGateway.Create(main.Account{
+	account2, _ := accountGateway.Create(app.Account{
 		Balance: 10000000,
 	})
 
-	userGateway.Create(main.User{
+	userGateway.Create(app.User{
 		FirstName:  "Benito",
 		LastName:   "Mussó",
 		Email:      "benito@rome.it",
@@ -190,7 +190,7 @@ func TestInvalidTransferDueToTenancy(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions for login
-	if assert.NoError(t, main.Authorize(c)) {
+	if assert.NoError(t, app.Authorize(c)) {
 		assert.Equal(t, 200, rec.Code)
 		assert.Contains(t, rec.Body.String(), "token")
 	}
@@ -229,26 +229,26 @@ func TestInvalidTransferDueToTenancy(t *testing.T) {
 	c2.Set("user", parsedToken)
 
 	// Assertions for login
-	if assert.NoError(t, main.TransferCmd(c2)) {
+	if assert.NoError(t, app.TransferCmd(c2)) {
 		assert.Equal(t, 401, rec2.Code)
 	}
 }
 
 func TestAccounts(t *testing.T) {
-	database := main.NewDatabase()
-	accountGateway := main.NewAccountGateway(database)
-	transferGateway := main.NewTransferGateway(database)
-	userGateway := main.NewUserGateway(database)
+	database := app.NewDatabase()
+	accountGateway := app.NewAccountGateway(database)
+	transferGateway := app.NewTransferGateway(database)
+	userGateway := app.NewUserGateway(database)
 
-	account1, _ := accountGateway.Create(main.Account{
+	account1, _ := accountGateway.Create(app.Account{
 		Balance: 10000,
 	})
 
-	account2, _ := accountGateway.Create(main.Account{
+	account2, _ := accountGateway.Create(app.Account{
 		Balance: 10000000,
 	})
 
-	userGateway.Create(main.User{
+	userGateway.Create(app.User{
 		FirstName:  "Benito",
 		LastName:   "Mussó",
 		Email:      "benito@rome.it",
@@ -270,7 +270,7 @@ func TestAccounts(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Assertions for login
-	if assert.NoError(t, main.Authorize(c)) {
+	if assert.NoError(t, app.Authorize(c)) {
 		assert.Equal(t, 200, rec.Code)
 		assert.Contains(t, rec.Body.String(), "token")
 	}
@@ -302,11 +302,11 @@ func TestAccounts(t *testing.T) {
 	c2.Set("user", parsedToken)
 
 	// Assertions for login
-	if assert.NoError(t, main.AccountsQuery(c2)) {
+	if assert.NoError(t, app.AccountsQuery(c2)) {
 		assert.Equal(t, 200, rec2.Code)
 
 		var body2 struct {
-			Accounts []*main.Account `json:"accounts"`
+			Accounts []*app.Account `json:"accounts"`
 		}
 
 		json.Unmarshal(rec2.Body.Bytes(), &body2)

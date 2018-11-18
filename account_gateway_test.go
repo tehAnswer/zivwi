@@ -1,16 +1,16 @@
-package main_test
+package app_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	main "github.com/tehAnswer/zivwi"
+	app "github.com/tehAnswer/zivwi"
 )
 
 func TestAccountFindBy(t *testing.T) {
 	// Setting data and services.
-	gateway := main.NewAccountGateway(main.NewDatabase())
-	account, err := gateway.Create(main.Account{Balance: uint64(10000)})
+	gateway := app.NewAccountGateway(app.NewDatabase())
+	account, err := gateway.Create(app.Account{Balance: uint64(10000)})
 	assert.NoError(t, err)
 	defer gateway.DeleteAll()
 
@@ -22,10 +22,10 @@ func TestAccountFindBy(t *testing.T) {
 
 func TestAccountWhere(t *testing.T) {
 	// Setting data and services.
-	gateway := main.NewAccountGateway(main.NewDatabase())
-	account1, err1 := gateway.Create(main.Account{Balance: uint64(10000)})
+	gateway := app.NewAccountGateway(app.NewDatabase())
+	account1, err1 := gateway.Create(app.Account{Balance: uint64(10000)})
 	assert.NoError(t, err1)
-	account2, err2 := gateway.Create(main.Account{Balance: uint64(20000)})
+	account2, err2 := gateway.Create(app.Account{Balance: uint64(20000)})
 	assert.NoError(t, err2)
 	defer gateway.DeleteAll()
 
