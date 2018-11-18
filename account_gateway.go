@@ -27,8 +27,8 @@ type AccountGatewayImpl struct {
 }
 
 type Account struct {
-	Id      string
-	Balance uint64
+	Id      string `json:"id"`
+	Balance uint64 `json:"balance"`
 }
 
 func (gtw *AccountGatewayImpl) Where(accountIds []string) ([]*Account, error) {

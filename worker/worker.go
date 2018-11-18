@@ -8,36 +8,48 @@ import (
 	app "github.com/tehAnswer/zivwi"
 )
 
-func Run() {
-	fmt.Println("Starting worker...")
-	appCtx := app.NewAppCtx()
-	consumer, _ := nsq.NewConsumer("transfers", "ch", nsq.NewConfig())
-	consumer.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
-		var transfer app.Transfer
-		json.Unmarshal(message.Body, &transfer)
+type Worker interface {
+	HandleMessage(message *nsq.Message) error
+}
 
-		fromAccount, _ := appCtx.Accounts.FindBy(transfer.FromAccountId)
-		_, notFoundDestErr := appCtx.Accounts.FindBy(transfer.ToAccountId)
+type TransferWorker struct {
+	Accounts        app.AccountGateway
+	Transfers       app.TransferGateway
+	TransferService app.TransferService
+}
 
-		if notFoundDestErr != nil {
-			_, err := appCtx.Database.Connection.Query(`UPDATE transfers SET status = $2, explanation = $3 WHERE id = $1`,
-				transfer.Id, "failed", "Dest. account does not exist")
-			return err
-		}
-
-		if fromAccount.Balance < transfer.Amount {
-			_, err := appCtx.Database.Connection.Query(`UPDATE transfers SET status = $2, explanation = $3 WHERE id = $1`,
-				transfer.Id, "failed", "Not enough funds")
-			return err
-		}
-
-		return appCtx.TransferService.Resolve(transfer)
-	}))
-
-	for {
-		select {
-		case <-consumer.StopChan:
-			return
-		}
+func NewTransferWorker(accounts app.AccountGateway, transfers app.TransferGateway, srv app.TransferService) Worker {
+	return &TransferWorker{
+		Accounts:        accounts,
+		Transfers:       transfers,
+		TransferService: srv,
 	}
+}
+
+func (worker *TransferWorker) HandleMessage(message *nsq.Message) error {
+	if len(message.Body) == 0 {
+		return fmt.Errorf("Blank body, omitting event.")
+	}
+
+	var transfer app.Transfer
+	json.Unmarshal(message.Body, &transfer)
+
+	fromAccount, _ := worker.Accounts.FindBy(transfer.FromAccountId)
+	_, notFoundDestErr := worker.Accounts.FindBy(transfer.ToAccountId)
+
+	if notFoundDestErr != nil {
+		transfer.Error = "to_account_not_found"
+		transfer.Status = "cancelled"
+		worker.Transfers.Update(transfer)
+		return notFoundDestErr
+	}
+
+	if fromAccount.Balance < transfer.Amount {
+		transfer.Error = "not_enough_funds"
+		transfer.Status = "cancelled"
+		worker.Transfers.Update(transfer)
+		return fmt.Errorf("Not enough balance to complete transfer (Ref: %v)", transfer.Id)
+	}
+
+	return worker.TransferService.Resolve(transfer)
 }

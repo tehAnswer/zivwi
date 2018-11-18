@@ -74,6 +74,7 @@ func TransferCmd(c echo.Context) error {
 	})
 
 	if paramsErr := c.Bind(params); paramsErr != nil {
+		fmt.Println(paramsErr.Error())
 		return c.JSON(422, struct {
 			Message string `json:"message"`
 		}{"Unprocessable transfer."})
@@ -93,7 +94,7 @@ func TransferCmd(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(422, struct {
-			Message string `json:message`
+			Message string `json:"message"`
 		}{err.Error()})
 	}
 
