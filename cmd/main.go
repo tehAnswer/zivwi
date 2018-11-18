@@ -13,7 +13,7 @@ func main() {
 		worker.Run()
 	} else if concept == "seeds" {
 		if os.Getenv("APP_ENV") == "production" {
-			panic("Seeding in PROD would remove valuable data.")
+			panic("Seeding the database in PROD would remove valuable data.")
 		}
 
 		appCtx := app.NewAppCtx()

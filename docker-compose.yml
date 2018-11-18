@@ -1,0 +1,85 @@
+version: '3'
+services:
+  nsqlookupd:
+    image: nsqio/nsq
+    command: sh -c 'nsqlookupd'
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+  nsqd:
+    image: nsqio/nsq
+    command: sh -c 'nsqd --lookupd-tcp-address=nsqlookupd:4160'
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+  nsqadmin:
+    image: nsqio/nsq
+    command: sh -c 'nsqadmin --lookupd-http-address=nsqlookupd:4161'
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4171:4171"
+  web: &web
+    build: .
+    command: go run cmd/main.go web
+    volumes:
+      - .:/go/src/github.com/tehAnswer/zivwi
+    environment:
+      DB_URL: postgres://docker:docker@db:5432/zivwi?sslmode=disable
+      # Use secrets in production accordingly.
+      JWT_SECRET: humbleBoy
+      NSQ_URL: "nsqd:4150"
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+  curlz:
+    image: appropriate/curl
+    command: sh -c 'curl -d " " "http://nsqd:4151/pub?topic=transfers"'
+    depends_on:
+      - nsqd
+      - nsqlookupd
+  worker:
+    build: .
+    command: go run cmd/main.go worker
+    volumes:
+      - .:/go/src/github.com/tehAnswer/zivwi
+    environment:
+      DB_URL: postgres://docker:docker@db:5432/zivwi?sslmode=disable
+      # Use secrets in production accordingly.
+      JWT_SECRET: humbleBoy
+      NSQ_URL: "nsqlookupd:4161"
+    ports: []
+    depends_on:
+      - nsqd
+      - nsqlookupd
+      - curlz
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: zivwi
+    volumes:
+      - /var/lib/postgresql/data
+  migrate:
+    build: .
+    command: bash -c 'sleep 4; cd cmd; ./migrate -path ../migrations -database "postgres://docker:docker@db:5432/zivwi?sslmode=disable" up'
+    depends_on:
+      - db
+  seeds:
+    build: .
+    image: golang:latest
+    command: bash -c 'sleep 6; go run cmd/main.go seeds'
+    volumes:
+      - .:/go/src/github.com/tehAnswer/zivwi
+    environment:
+      DB_URL: postgres://docker:docker@db:5432/zivwi?sslmode=disable
+    depends_on:
+      - db
+      - migrate
+volumes:
+  bundle:
+  node:

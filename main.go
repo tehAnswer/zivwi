@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	address = flag.String("port", "127.0.0.1:3000", "TCP address to listen to.")
+	address = flag.String("port", "0.0.0.0:3000", "TCP address to listen to.")
 	appCtx  = NewAppCtx()
 )
 
