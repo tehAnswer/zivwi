@@ -6,6 +6,8 @@ This repository contains a payment handling backend system prototype built in Go
 
 # Context
 
+> _**STACK**: [Echo](https://echo.labstack.com) + NSQ + Postgres_
+
 As stated above, this prototype has one goal: to allow transfers between accounts and the retrieval of their balances. To accomplish that, the following data model has been proposed:
 
 - **User**: email, password, first and last name. Many accounts.
@@ -30,7 +32,7 @@ These are the following steps to get up and running. Before following these inst
 
 # Usage
 
-> **PROTIP**: _If you're a user of [Paw](https://paw.cloud), I left a Paw project in the repository for trying out the API._
+> _**PROTIP**: If you're a user of [Paw](https://paw.cloud), I left a Paw project in the repository for trying out the API._
 
 Once set up, perform the following requests:
 
